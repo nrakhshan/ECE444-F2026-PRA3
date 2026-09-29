@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Chatbot{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Chat with the bot</h1>
+    <p>Hello, {{ name }}!</p>
+</div>
+
+<div id="chat-replies" data-user-name="{{ name }}" aria-live="polite"></div>
+
+<form id="chat-form">
+    <label for="message">Message</label>
+    <input id="message" name="message" type="text" required autocomplete="off">
+    <button type="submit">Send</button>
+</form>
+
+<form action="{{ url_for('logout') }}" method="post">
+    <button type="submit">Logout</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message');
+    const replies = document.getElementById('chat-replies');
+    const userName = replies.dataset.userName;
+
+    chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) {
+            return;
+        }
+
+        const userMessage = document.createElement('p');
+        userMessage.textContent = `${userName}: ${message}`;
+        replies.appendChild(userMessage);
+
+        const response = await fetch('{{ url_for("chat_page") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message})
+        });
+        const result = await response.json();
+        const reply = document.createElement('p');
+        reply.textContent = `Bot: ${result.reply}`;
+        replies.appendChild(reply);
+        messageInput.value = '';
+        messageInput.focus();
+    });
+</script>
+{% endblock %}
